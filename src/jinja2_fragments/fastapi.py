@@ -5,6 +5,7 @@ import typing
 try:
     from starlette.background import BackgroundTask
     from starlette.responses import HTMLResponse, Response
+    from starlette.requests import Request
     from starlette.templating import Jinja2Templates, _TemplateResponse
 except ModuleNotFoundError as e:
     raise ModuleNotFoundError(
@@ -60,11 +61,14 @@ class Jinja2Blocks(Jinja2Templates):
         background: BackgroundTask | None = None,
         **kwargs: typing.Any,
     ) -> Response:
-        if "request" not in context:
-            raise ValueError('context must include a "request" key')
+        request: Request = kwargs.get("request", context.get("request"))
+        context.setdefault("request", request)
+
+        hx_target = request.headers.get("HX-Target")
+
         template = self.get_template(name)
 
-        block_name = kwargs.get("block_name", None)
+        block_name = kwargs.get("block_name", hx_target)
         block_names = kwargs.get("block_names", [])
 
         if block_name:
